@@ -12,6 +12,8 @@ var admzip = require("adm-zip");
 var guid = require("guid");
 var phantomjs = require("phantomjs");
 var rimraf = require("rimraf");
+var hwaStore = require("hwa-store-id");
+
 
 /*
     .crx file format (Little Endian)
@@ -129,6 +131,7 @@ export function convert(src: string, dest: string) {
 
 
         // Convert W3C manifest to Appx manifest
+
         var rl = readline.createInterface({ input: process.stdin, output: process.stdout });
         rl.question("Identity Name: ", (identityName: string) => {
             //identityName = identityName || "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx";
