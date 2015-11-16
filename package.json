@@ -14,7 +14,7 @@
     "adm-zip": "^0.4.7",
     "archiver": "^0.16.0",
     "guid": "^0.0.12",
-    "hwa-store-id": "0.0.1",
+    "hwa-store-id": "0.0.6",
     "ncp": "^2.0.0",
     "phantomjs": "^1.9.18",
     "request": "^2.65.0",

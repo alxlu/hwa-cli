@@ -14,7 +14,6 @@ var phantomjs = require("phantomjs");
 var rimraf = require("rimraf");
 var hwaStore = require("hwa-store-id");
 
-
 /*
     .crx file format (Little Endian)
     43 72 32 34 - "Cr24"
@@ -70,6 +69,7 @@ export function convert(src: string, dest: string) {
             }
             return null;
         });
+        console.log(JSON.stringify(w3cManifest));
 
 
         // Establish assets
@@ -122,50 +122,48 @@ export function convert(src: string, dest: string) {
             for (var i = 0; i < w3cManifest.splash_screens.length; i++) {
                 matchBest(splashScreen, w3cManifest.splash_screens[i]);
             }
-        }
+        }        
 
+        
         (logoStore.nativeSize.w !== logoStore.requiredSize.w || logoStore.nativeSize.h !== logoStore.requiredSize.h) && resizeAndAddToManifest(logoStore);
         (logoSmall.nativeSize.w !== logoSmall.requiredSize.w || logoSmall.nativeSize.h !== logoSmall.requiredSize.h) && resizeAndAddToManifest(logoSmall);
         (logoLarge.nativeSize.w !== logoLarge.requiredSize.w || logoLarge.nativeSize.h !== logoLarge.requiredSize.h) && resizeAndAddToManifest(logoLarge);
         (splashScreen.nativeSize.w !== splashScreen.requiredSize.w || splashScreen.nativeSize.h !== splashScreen.requiredSize.h) && resizeAndAddToManifest(splashScreen);
-
+        
 
         // Convert W3C manifest to Appx manifest
-
-        var rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-        rl.question("Identity Name: ", (identityName: string) => {
-            //identityName = identityName || "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx";
-            rl.question("Publisher Identity: ", (publisherIdentity: string) => {
-                //publisherIdentity = publisherIdentity || "CN=AUTHOR_NAME";
-                rl.question("Publisher Display Name: ", (publisherDisplayName: string) => {
-                    //publisherDisplayName = publisherDisplayName || publisherIdentity.substr(3);
-                    rl.close();
-                    console.log();
-                    console.log("Converting manifest to AppxManifest");
-                    var xmlManifest = webConverter.w3CToAppxManifest(w3cManifest, fs.readFileSync(p.join(__dirname, "../../templates/w3c-AppxManifest-template.xml"), "utf8"),
-                        {
-                            identityName: identityName,
-                            publisherDisplayName: publisherDisplayName,
-                            publisherIdentity: publisherIdentity
-                        },
-                        [
-                            { name: "GeneratedFrom", value: "HWA-CLI" },
-                            { name: "GenerationDate", value: new Date().toUTCString() },
-                            { name: "ToolVersion", value: "0.1.0" }
-                        ]);
-                    console.log();
+        const appname = `${w3cManifest.name}_test${Math.floor(Math.random() * 10000)}`;
+        hwaStore.getStoreId(appname.replace(" ","")).then(() => {
+            let result = fs.readFileSync(p.join(os.tmpdir(), 'publishervals'), 'utf8');
+            result = JSON.parse(result);
+            const {
+                packageIdentityName: identityName,
+                publisherName: publisherIdentity,
+                publisherDisplayName }: any = result;
+            console.log();
+            console.log("Converting manifest to AppxManifest");
+            var xmlManifest = webConverter.w3CToAppxManifest(w3cManifest, fs.readFileSync(p.join(__dirname, "../../templates/w3c-AppxManifest-template.xml"), "utf8"),
+                {
+                    identityName: identityName,
+                    publisherDisplayName: publisherDisplayName,
+                    publisherIdentity: publisherIdentity
+                },
+                [
+                    { name: "GeneratedFrom", value: "HWA-CLI" },
+                    { name: "GenerationDate", value: new Date().toUTCString() },
+                    { name: "ToolVersion", value: "0.1.0" }
+                ]);
+            console.log();
         
-                    // Write the AppxManifest
-                    var appxManifestOutputPath = p.join(dest, "AppxManifest.xml");
-                    console.log("Writing AppxManifest: " + appxManifestOutputPath);
-                    if (fs.existsSync(appxManifestOutputPath)) {
-                        fs.unlinkSync(appxManifestOutputPath);
-                    }
-                    fs.writeFileSync(appxManifestOutputPath, xmlManifest);
-                    console.log();
-                    c();
-                });
-            });
+            // Write the AppxManifest
+            var appxManifestOutputPath = p.join(dest, "AppxManifest.xml");
+            console.log("Writing AppxManifest: " + appxManifestOutputPath);
+            if (fs.existsSync(appxManifestOutputPath)) {
+                fs.unlinkSync(appxManifestOutputPath);
+            }
+            fs.writeFileSync(appxManifestOutputPath, xmlManifest);
+            console.log();
+            c();
         });
     });
 }
@@ -199,6 +197,9 @@ export function extractCrx(src: string, dest: string) {
 }
 
 function resizeImage(absSrcPath: string, targetWidth: number, targetHeight: number, newFilename: string) {
+    console.log('calling resizeImage');
+    console.log(p.join(__dirname, "phantom-image.js"));
+    console.log(phantomjs.path);
     var outputPath = p.join(p.dirname(absSrcPath), newFilename);
     cp.execFileSync(phantomjs.path, [p.join(__dirname, "phantom-image.js"), absSrcPath, "" + targetWidth, "" + targetHeight, outputPath]/*, { stdio: [process.stdin, process.stdout, process.stderr] }*/);
 }
